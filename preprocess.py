@@ -82,6 +82,18 @@ output_paths = {
             'dev-fairseq': './data/obqa/fairseq/official/valid-fact.jsonl',
             'test-fairseq': './data/obqa/fairseq/official/test-fact.jsonl',
         },
+
+
+        'grounded': {
+            'train': './data/obqa/grounded/train-fact.grounded.jsonl',
+            'dev': './data/obqa/grounded/dev-fact.grounded.jsonl',
+            'test': './data/obqa/grounded/test-fact.grounded.jsonl',
+        },
+        'graph': {
+            'adj-train': './data/obqa/graph/train-fact.graph.adj.pk',
+            'adj-dev': './data/obqa/graph/dev-fact.graph.adj.pk',
+            'adj-test': './data/obqa/graph/test-fact.graph.adj.pk',
+        },
     },
 }
 

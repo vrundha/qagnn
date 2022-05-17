@@ -341,6 +341,7 @@ def train(args):
 
 
 def eval_detail(args):
+    print("Evaluating...")
     assert args.load_model_path is not None
     model_path = args.load_model_path
 
@@ -365,12 +366,17 @@ def eval_detail(args):
         device1 = torch.device("cuda:1")
     elif torch.cuda.device_count() == 1 and args.cuda:
         device0 = torch.device("cuda:0")
-        device1 = torch.device("cuda:0")
+        device1 = torch.device("cuda:1")
     else:
         device0 = torch.device("cpu")
         device1 = torch.device("cpu")
+    # device0 = torch.device("cpu")
+    # device1 = torch.device("cpu")
+    device0 = device1 = torch.device("cpu")
+    print(device0, device1)
     model.encoder.to(device0)
-    model.decoder.to(device1)
+    # model.encoder.to(device0)
+    # model.decoder.to(device1)
     model.eval()
 
     statement_dic = {}
@@ -399,8 +405,8 @@ def eval_detail(args):
                                            subsample=args.subsample, use_cache=args.use_cache)
 
     save_test_preds = args.save_model
-    dev_acc = evaluate_accuracy(dataset.dev(), model)
-    print('dev_acc {:7.4f}'.format(dev_acc))
+    # dev_acc = evaluate_accuracy(dataset.dev(), model)
+    # print('dev_acc {:7.4f}'.format(dev_acc))
     if not save_test_preds:
         test_acc = evaluate_accuracy(dataset.test(), model) if args.test_statements else 0.0
     else:
@@ -409,18 +415,27 @@ def eval_detail(args):
         count = 0
         dt = datetime.datetime.today().strftime('%Y%m%d%H%M%S')
         preds_path = os.path.join(args.save_dir, 'test_preds_{}.csv'.format(dt))
+        print(preds_path)
         with open(preds_path, 'w') as f_preds:
             with torch.no_grad():
                 for qids, labels, *input_data in tqdm(eval_set):
                     count += 1
+                    
                     logits, _, concept_ids, node_type_ids, edge_index, edge_type = model(*input_data, detail=True)
                     predictions = logits.argmax(1) #[bsize, ]
                     preds_ranked = (-logits).argsort(1) #[bsize, n_choices]
-                    for i, (qid, label, pred, _preds_ranked, cids, ntype, edges, etype) in enumerate(zip(qids, labels, predictions, preds_ranked, concept_ids, node_type_ids, edge_index, edge_type)):
-                        acc = int(pred.item()==label.item())
-                        print ('{},{}'.format(qid, chr(ord('A') + pred.item())), file=f_preds)
-                        f_preds.flush()
-                        total_acc.append(acc)
+                    # print(predictions, preds_ranked, concept_ids, node_type_ids, edge_index, edge_type)
+
+                    for i, pred in enumerate(predictions):
+                        option = chr(ord('A') + pred.item())
+                        print(f'{qids[i]}, {option}', file=f_preds)
+
+
+                    # for i, (qid, label, pred, _preds_ranked, cids, ntype, edges, etype) in enumerate(zip(qids, labels, predictions, preds_ranked, concept_ids, node_type_ids, edge_index, edge_type)):
+                    #     acc = int(pred.item()==label.item())
+                    #     print ('{},{}'.format(qid, chr(ord('A') + pred.item())), file=f_preds)
+                    #     f_preds.flush()
+                    #     total_acc.append(acc)
         test_acc = float(sum(total_acc))/len(total_acc)
 
         print('-' * 71)
